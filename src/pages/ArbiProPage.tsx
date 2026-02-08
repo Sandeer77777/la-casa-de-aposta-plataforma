@@ -1,18 +1,9 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import ArbitrageCalculator from '../components/ArbitrageCalculator';
 import { MissionDossier } from '../components/MissionDossier';
-import AddFaseModal from '../components/AddFaseModal';
 
 export default function ArbiProPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [fases, setFases] = useState<any[]>([]);
-
-  const handleSaveFase = (novasEntradas: any) => {
-    console.log('Fase salva:', novasEntradas);
-    setIsModalOpen(false);
-  };
-
   return (
     <div className="max-w-[1920px] mx-auto px-4 md:px-10 pt-8 md:pt-16 pb-24 relative z-10">
       <MissionDossier type="arbipro" />
@@ -40,29 +31,6 @@ export default function ArbiProPage() {
           <div className="h-[2px] w-16 bg-red-500/30" />
         </div>
       </div>
-
-      <div className="flex justify-center mb-16">
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="group relative px-10 py-5 bg-white hover:bg-red-600 text-black hover:text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] transition-all duration-300 shadow-[0_20px_40px_rgba(0,0,0,0.3)] hover:shadow-red-500/20 hover:-translate-y-1 active:scale-95"
-        >
-          <span className="relative z-10 flex items-center gap-3">
-            Adicionar Fase Tática
-            <div className="w-6 h-6 bg-black/10 rounded-lg flex items-center justify-center group-hover:bg-black/20 group-hover:text-white">
-              <span className="text-xl">+</span>
-            </div>
-          </span>
-        </button>
-      </div>
-
-      {isModalOpen && (
-        <AddFaseModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleSaveFase}
-          estrategiaOperacao="freebet"
-        />
-      )}
 
       <div className="relative w-full">
         <ArbitrageCalculator />
