@@ -8,6 +8,7 @@ interface BettingHouseCardProps {
   actions: {
     updateHouse: (index: number, patch: Partial<House>) => void;
     handleStakeChange: (index: number, value: string) => void;
+    handleResponsibilityChange: (index: number, value: string) => void;
     setFixedStake: (index: number) => void;
   };
 }
@@ -129,10 +130,18 @@ export const BettingHouseCard: React.FC<BettingHouseCardProps> = ({ house, index
       </div>
       
       {house.lay && (
-        <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-          <label className="block text-[12px] font-black text-red-500 uppercase tracking-widest mb-2">RESPONSABILIDADE TOTAL</label>
-          <div className="w-full px-4 py-3 bg-red-500/5 border border-red-500/20 rounded-xl text-red-500 font-black font-mono text-xl">
-            {house.responsibility ? `R$ ${house.responsibility.replace('.', ',')}` : 'R$ 0,00'}
+        <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-2">
+          <label className="block text-[12px] font-black text-red-500 uppercase tracking-widest">RESPONSABILIDADE TOTAL</label>
+          <div className="relative">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500 font-black text-lg">R$</div>
+            <input 
+              type="text" 
+              inputMode="decimal" 
+              value={house.responsibility} 
+              onChange={(e) => actions.handleResponsibilityChange(index, e.target.value.replace(',', '.'))} 
+              className={`${inputBaseClasses} pl-12 text-xl border-red-500/30 text-red-500 bg-red-500/5`} 
+              placeholder="0.00" 
+            />
           </div>
         </div>
       )}

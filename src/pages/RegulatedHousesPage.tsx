@@ -21,7 +21,7 @@ export default function RegulatedHousesPage() {
           Plataformas <span className="text-red-500">Parceiras</span>
         </h1>
         <p className="text-zinc-500 text-lg md:text-xl lg:text-2xl max-w-4xl font-medium tracking-wide leading-relaxed px-4">
-          Confira a lista de plataformas recomendadas pela La Casa de Apostas e aproveite benefícios exclusivos. Aliados estratégicos para o seu sucesso.
+          Confira a lista de plataformas recomendadas pela La Casas de Aposta e aproveite benefícios exclusivos. Aliados estratégicos para o seu sucesso.
         </p>
         <div className="flex items-center gap-6 mt-10">
           <div className="h-[2px] w-16 bg-red-500/30" />

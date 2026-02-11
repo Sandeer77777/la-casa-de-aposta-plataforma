@@ -1,4 +1,4 @@
-# 🏦 Protocolo de Deploy: LA CASA DE APOSTAS
+# 🏦 Protocolo de Deploy: LA CASAS DE APOSTA
 
 Este dossiê contém as instruções técnicas para subir a plataforma na VPS. O sistema é uma aplicação **React (Vite)** que deve ser servida como conteúdo estático de alta performance.
 

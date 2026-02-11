@@ -40,7 +40,7 @@ export default function Layout({ children }: LayoutProps) {
               </div>
               <div className="block">
                 <h1 className="text-base md:text-xl font-black tracking-tighter text-white uppercase leading-none">
-                  LA CASA <span className="text-red-500">DE APOSTAS</span>
+                  LA CASAS <span className="text-red-500">DE</span> APOSTA
                 </h1>
                 <p className="text-[7px] md:text-[9px] font-bold tracking-[0.2em] md:tracking-[0.3em] text-red-600 uppercase">Execução Estratégica</p>
               </div>
@@ -120,11 +120,11 @@ export default function Layout({ children }: LayoutProps) {
                 <img src="/logo-heist.jpg" alt="Logo" className="w-full h-full object-cover" />
               </div>
               <span className="text-xl font-black tracking-tighter text-white uppercase">
-                LA CASA <span className="text-red-500">DE APOSTAS</span>
+                LA CASAS <span className="text-red-500">DE</span> APOSTA
               </span>
             </div>
             <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest text-center">
-              © 2024 La Casa de Apostas - O Plano Perfeito para o seu Lucro
+              © 2024 La Casas de Aposta - O Plano Perfeito para o seu Lucro
             </p>
             <div className="mt-4 flex gap-6">
               <div className="h-[1px] w-12 bg-zinc-800" />

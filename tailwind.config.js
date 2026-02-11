@@ -8,7 +8,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Paleta La Casa de Apostas - Tema Vermelho Heist
+        // Paleta La Casas de Aposta - Tema Vermelho Heist
         'team': {
           black: '#050505',
           graphite: '#121212',

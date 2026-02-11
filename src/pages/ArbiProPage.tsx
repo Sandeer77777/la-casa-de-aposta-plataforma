@@ -23,7 +23,7 @@ export default function ArbiProPage() {
           Plano de <span className="text-red-500">Execução</span>
         </h1>
         <p className="text-zinc-500 text-base md:text-lg lg:text-2xl max-w-4xl font-medium tracking-wide leading-relaxed px-4">
-          Assim como o Professor, analisamos cada detalhe. Identificamos as menores brechas no mercado para garantir que cada entrada seja matematicamente perfeita e o resultado, previsível.
+          Assim como o Professor, analisamos cada detalhe. Identificamos as melhores brechas no mercado para garantir que cada entrada seja matematicamente perfeita e o resultado, previsível.
         </p>
         <div className="flex items-center gap-6 mt-10">
           <div className="h-[2px] w-16 bg-red-500/30" />

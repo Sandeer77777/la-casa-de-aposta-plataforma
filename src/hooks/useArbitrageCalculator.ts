@@ -110,10 +110,21 @@ export function useArbitrageCalculator() {
 
     // 2.3 Responsabilidade LAY
     nextHouses = nextHouses.map((h, i) => {
-      if (h.lay && !manualOverrides[i]?.responsibility) {
-        const sVal = parseFlex(h.stake);
+      if (h.lay) {
         const oVal = parseFlex(h.odd);
-        if (sVal > 0 && oVal > 1) return { ...h, responsibility: formatDecimal(sVal * (oVal - 1)) };
+        if (oVal > 1) {
+          // Se a responsabilidade foi editada manualmente e a stake não, calculamos a stake a partir da responsabilidade
+          if (manualOverrides[i]?.responsibility && !manualOverrides[i]?.stake) {
+            const rVal = parseFlex(h.responsibility);
+            const calcStake = rVal / (oVal - 1);
+            return { ...h, stake: formatDecimal(calcStake) };
+          }
+          // Se a stake foi editada (ou é calculada via arbitragem) e a responsabilidade não tem trava manual, calculamos a responsabilidade
+          if (!manualOverrides[i]?.responsibility) {
+            const sVal = parseFlex(h.stake);
+            return { ...h, responsibility: formatDecimal(sVal * (oVal - 1)) };
+          }
+        }
       }
       return h;
     });
@@ -168,8 +179,43 @@ export function useArbitrageCalculator() {
     }, []),
     handleStakeChange: useCallback((i: number, v: string) => {
       setHouses(prev => prev.map((h, idx) => i === idx ? { ...h, stake: v } : h));
-      setManualOverrides(prev => ({ ...prev, [i]: { ...prev[i], stake: true } }));
-    }, []),
+      setManualOverrides(prev => {
+        const n = { ...prev, [i]: { ...prev[i], stake: true, responsibility: false } };
+        
+        // Se a casa que mudou for a FIXA, precisamos permitir que as OUTRAS recalcularem.
+        // Portanto, limpamos as travas de stake das outras casas.
+        const isFixed = houses[i]?.fixedStake;
+        if (isFixed) {
+          houses.forEach((_, idx) => {
+            if (idx !== i) {
+              if (n[idx]) {
+                n[idx] = { ...n[idx], stake: false };
+              }
+            }
+          });
+        }
+        return n;
+      });
+    }, [houses]),
+    handleResponsibilityChange: useCallback((i: number, v: string) => {
+      setHouses(prev => prev.map((h, idx) => i === idx ? { ...h, responsibility: v } : h));
+      setManualOverrides(prev => {
+        const n = { ...prev, [i]: { ...prev[i], responsibility: true, stake: false } };
+        
+        // Mesma lógica para responsabilidade na casa fixa
+        const isFixed = houses[i]?.fixedStake;
+        if (isFixed) {
+          houses.forEach((_, idx) => {
+            if (idx !== i) {
+              if (n[idx]) {
+                n[idx] = { ...n[idx], stake: false };
+              }
+            }
+          });
+        }
+        return n;
+      });
+    }, [houses]),
     setNumberOfHouses,
     setRoundingValue,
     clearAllData: useCallback(() => {
