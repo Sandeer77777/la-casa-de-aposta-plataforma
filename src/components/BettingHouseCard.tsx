@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { House } from '../types/calculator';
-import { Lock, Unlock, Percent, TrendingUp, Zap, Gift, ExternalLink } from 'lucide-react';
+import { Lock, Unlock, Percent, TrendingUp, Zap, Gift, ExternalLink, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
 
 interface BettingHouseCardProps {
   house: House;
@@ -13,25 +13,25 @@ interface BettingHouseCardProps {
   };
 }
 
-const inputBaseClasses = "w-full px-4 py-3 bg-black border border-zinc-800 rounded-xl focus:ring-2 focus:ring-red-500/50 focus:border-red-500 text-white font-black font-mono text-lg transition-all";
+const inputBaseClasses = "w-full px-2 py-1.5 bg-black border border-zinc-800 rounded-lg focus:ring-1 focus:ring-red-500/50 focus:border-red-500 text-white font-black font-mono text-xs md:text-sm transition-all";
 
-// Custom Toggle Component
 const CustomToggle: React.FC<{ 
   checked: boolean; 
   onChange: (checked: boolean) => void; 
   colorClass: string; 
   id: string 
 }> = ({ checked, onChange, colorClass, id }) => (
-  <label htmlFor={id} className="flex items-center cursor-pointer">
+  <label htmlFor={id} className="flex items-center cursor-pointer scale-75 md:scale-90">
     <div className="relative">
       <input type="checkbox" id={id} className="sr-only" checked={checked} onChange={e => onChange(e.target.checked)} />
-      <div className={`block w-12 h-6 rounded-full transition-colors duration-300 ${checked ? colorClass : 'bg-zinc-800'}`}></div>
-      <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ${checked ? 'translate-x-6' : 'translate-x-0'}`}></div>
+      <div className={`block w-10 h-5 rounded-full transition-colors duration-300 ${checked ? colorClass : 'bg-zinc-800'}`}></div>
+      <div className={`dot absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform duration-300 ${checked ? 'translate-x-5' : 'translate-x-0'}`}></div>
     </div>
   </label>
 );
 
 export const BettingHouseCard: React.FC<BettingHouseCardProps> = ({ house, index, actions }) => {
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleInputChange = (field: keyof House, value: string | number | boolean | null) => {
     actions.updateHouse(index, { [field]: value });
@@ -42,176 +42,102 @@ export const BettingHouseCard: React.FC<BettingHouseCardProps> = ({ house, index
   };
 
   return (
-    <div className="relative bg-[#0E0E10] border-2 border-zinc-800 rounded-[32px] p-6 hover:border-red-500/40 transition-all duration-500 flex flex-col gap-6 group overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
-      {/* Detalhe Superior */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+    <div className="relative bg-[#0E0E10] border border-zinc-800 rounded-xl p-3 md:p-5 hover:border-red-500/40 transition-all duration-500 flex flex-col gap-3 group shadow-xl">
       
-      {/* Header Simplificado */}
-      <div className="flex flex-col border-b border-zinc-800 pb-4">
-        <span className="text-[12px] font-black text-red-500 uppercase tracking-[0.2em] mb-1">ALVO {index + 1}</span>
+      <div className="flex flex-col border-b border-zinc-800 pb-2">
+        <span className="text-[8px] md:text-[9px] font-black text-red-500 uppercase tracking-widest mb-1">ALVO {index + 1}</span>
         <input
           type="text"
           value={house.name}
           onChange={(e) => handleInputChange('name', e.target.value)}
-          className="bg-transparent text-xl font-black text-white placeholder-zinc-800 focus:outline-none uppercase tracking-tight"
-          placeholder={`CASAS DE APOSTA`}
+          className="bg-transparent text-sm md:text-base font-black text-white placeholder-zinc-800 focus:outline-none uppercase truncate"
+          placeholder={`CASA`}
         />
       </div>
 
-      {/* MERCADO DE ATUAÇÃO */}
-      <div className="space-y-2">
-        <label className="block text-[12px] font-black text-red-500 uppercase tracking-widest">MERCADO / SELEÇÃO</label>
-        <input 
-          type="text" 
-          value={house.market || ''} 
-          onChange={(e) => handleInputChange('market', e.target.value)} 
-          className="w-full px-4 py-3 bg-red-500/5 border border-red-500/20 rounded-xl focus:ring-2 focus:ring-red-500/50 text-white font-black uppercase placeholder-zinc-800"
-          placeholder="EX: EMPATE / TIME A"
-        />
-      </div>
-
-      {/* LINK DA APOSTA */}
-      <div className="space-y-2">
-        <label className="block text-[12px] font-black text-zinc-500 uppercase tracking-widest">LINK DO ALVO</label>
-        <div className="flex gap-2">
-          <input 
-            type="text" 
-            value={house.link || ''} 
-            onChange={(e) => handleInputChange('link', e.target.value)} 
-            className="w-full px-4 py-3 bg-black border border-zinc-800 rounded-xl focus:ring-2 focus:ring-red-500/50 text-white font-medium text-xs placeholder-zinc-800"
-            placeholder="COLE O LINK AQUI"
-          />
-          {house.link && (
-            <a 
-              href={house.link} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="p-3 bg-red-600 hover:bg-white text-white hover:text-black rounded-xl transition-all shadow-lg flex items-center justify-center shrink-0"
-              title="Acessar Plataforma"
-            >
-              <ExternalLink size={18} />
-            </a>
-          )}
-        </div>
-      </div>
-
-      {/* Odds */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="block text-[12px] font-black text-zinc-500 uppercase tracking-widest">ODD ATUAL</label>
-          <input type="text" inputMode="decimal" value={house.odd} onChange={(e) => handleInputChange('odd', e.target.value.replace(',', '.'))} className={inputBaseClasses} placeholder="1.00" />
-        </div>
-        <div className="space-y-2">
-          <label className="block text-[12px] font-black text-zinc-500 uppercase tracking-widest">ODD FINAL</label>
-          <div className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-red-500 font-black font-mono text-xl text-center">
-            {house.finalOdd.toFixed(2).replace('.', ',')}
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <input type="text" value={house.market || ''} onChange={e => handleInputChange('market', e.target.value)} className="w-full px-2 py-1 bg-red-500/5 border border-red-500/10 rounded text-white font-bold text-[9px] md:text-[10px] uppercase" placeholder="MERCADO..."/>
+          <div className="flex gap-1">
+            <input type="text" value={house.link || ''} onChange={e => handleInputChange('link', e.target.value)} className="w-full px-2 py-1 bg-black border border-zinc-800 rounded text-white font-medium text-[9px]" placeholder="URL LINK"/>
+            {house.link && <a href={house.link} target="_blank" rel="noopener noreferrer" className="p-1 bg-red-600 rounded text-white shrink-0 flex items-center justify-center"><ExternalLink size={10} /></a>}
           </div>
         </div>
-      </div>
 
-      {/* Stake & LAY Juntos */}
-      <div className="space-y-2">
-        <div className="flex justify-between items-center">
-          <label className="block text-[12px] font-black text-zinc-500 uppercase tracking-widest">STAKE (INVESTIMENTO)</label>
-          <div className="flex items-center gap-2">
-            <span className={`text-[10px] font-black uppercase tracking-widest ${house.lay ? 'text-red-500' : 'text-zinc-600'}`}>MODO LAY</span>
-            <CustomToggle 
-              id={`house-lay-toggle-${index}`}
-              checked={house.lay}
-              onChange={(checked) => handleInputChange('lay', checked)}
-              colorClass="bg-red-600"
-            />
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <label className="block text-[8px] font-black text-zinc-500 uppercase">ODD</label>
+            <input type="text" inputMode="decimal" value={house.odd} onChange={(e) => handleInputChange('odd', e.target.value.replace(',', '.'))} className={inputBaseClasses} placeholder="1.00" />
           </div>
-        </div>
-        <div className="relative">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 font-black text-lg">R$</div>
-          <input type="text" inputMode="decimal" value={house.stake} onChange={(e) => actions.handleStakeChange(index, e.target.value.replace(',', '.'))} className={`${inputBaseClasses} pl-12 text-xl ${house.fixedStake ? 'border-red-500 text-red-500 shadow-[0_0_15px_rgba(220,38,38,0.1)]' : ''}`} placeholder="0.00" />
-        </div>
-      </div>
-      
-      {house.lay && (
-        <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-2">
-          <label className="block text-[12px] font-black text-red-500 uppercase tracking-widest">RESPONSABILIDADE TOTAL</label>
-          <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500 font-black text-lg">R$</div>
-            <input 
-              type="text" 
-              inputMode="decimal" 
-              value={house.responsibility} 
-              onChange={(e) => actions.handleResponsibilityChange(index, e.target.value.replace(',', '.'))} 
-              className={`${inputBaseClasses} pl-12 text-xl border-red-500/30 text-red-500 bg-red-500/5`} 
-              placeholder="0.00" 
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Checkboxes */}
-      <div className="bg-black/40 rounded-2xl p-5 border border-zinc-800 space-y-5">
-        <div className="flex justify-between items-center">
-          <label className="flex items-center gap-3 cursor-pointer text-[12px] font-black text-zinc-300 uppercase tracking-widest">
-            <Percent className="w-5 h-5 text-red-500"/>
-            TAXA DE OPERAÇÃO
-          </label>
-          <CustomToggle 
-            id={`commission-toggle-${index}`}
-            checked={house.commission !== null}
-            onChange={(checked) => handleCheckboxChange('commission', checked, 5)}
-            colorClass="bg-red-600"
-          />
-        </div>
-        {house.commission !== null && (
-            <div className="relative animate-in zoom-in-95 duration-200">
-               <input type="text" inputMode="decimal" value={house.commission || ''} onChange={(e) => handleInputChange('commission', e.target.value.replace(',', '.'))} className={`${inputBaseClasses} py-3 text-base pr-10`} placeholder="5"/>
-               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 font-black text-sm">%</span>
+          <div className="space-y-1">
+            <label className="block text-[8px] font-black text-zinc-500 uppercase tracking-widest">FINAL</label>
+            <div className="w-full px-2 py-1.5 bg-zinc-900 border border-zinc-800 rounded-md text-red-500 font-black font-mono text-xs md:text-sm text-center">
+              {house.finalOdd.toFixed(2)}
             </div>
-        )}
-        
-        <div className="flex justify-between items-center">
-          <label className="flex items-center gap-3 cursor-pointer text-[12px] font-black text-zinc-300 uppercase tracking-widest">
-            <TrendingUp className="w-5 h-5 text-red-500"/>
-            BOOST DE ODD (%)
-          </label>
-          <CustomToggle 
-            id={`increase-toggle-${index}`}
-            checked={house.increase !== null}
-            onChange={(checked) => handleCheckboxChange('increase', checked, 10)}
-            colorClass="bg-red-600"
-          />
+          </div>
         </div>
-        {house.increase !== null && (
-             <div className="relative animate-in zoom-in-95 duration-200">
-                <input type="text" inputMode="decimal" value={house.increase || ''} onChange={(e) => handleInputChange('increase', e.target.value.replace(',', '.'))} className={`${inputBaseClasses} py-3 text-base pr-10`} placeholder="10"/>
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 font-black text-sm">%</span>
-             </div>
-        )}
-        
-        <div className="flex justify-between items-center">
-          <label className="flex items-center gap-3 cursor-pointer text-[12px] font-black text-zinc-300 uppercase tracking-widest">
-            <Gift className="w-5 h-5 text-red-500"/>
-            USAR FREEBET
-          </label>
-          <CustomToggle 
-            id={`freebet-toggle-${index}`}
-            checked={house.freebet}
-            onChange={(checked) => handleInputChange('freebet', checked)}
-            colorClass="bg-red-600"
-          />
+
+        <div className="space-y-1">
+          <div className="flex justify-between items-center">
+            <label className="text-[8px] font-black text-zinc-500 uppercase">STAKE (R$)</label>
+            <div className="flex items-center gap-1">
+              <span className="text-[7px] font-bold text-zinc-600 uppercase">LAY</span>
+              <CustomToggle id={`lay-${index}`} checked={house.lay} onChange={(checked) => handleInputChange('lay', checked)} colorClass="bg-red-600" />
+            </div>
+          </div>
+          <input type="text" inputMode="decimal" value={house.stake} onChange={(e) => actions.handleStakeChange(index, e.target.value.replace(',', '.'))} className={`${inputBaseClasses} font-bold ${house.fixedStake ? 'border-red-500 text-red-500 shadow-[0_0_10px_rgba(220,38,38,0.1)]' : ''}`} placeholder="0.00" />
         </div>
       </div>
 
-      {/* Botão Fixar */}
-      <div className="mt-auto">
+      <div className="mt-2 space-y-2">
         <button 
-          onClick={() => actions.setFixedStake(index)} 
-          className={`w-full py-5 rounded-xl font-black text-[12px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all duration-300 ${
-            house.fixedStake 
-            ? 'bg-red-600 text-white shadow-[0_10px_20px_rgba(220,38,38,0.2)]' 
-            : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white border border-zinc-700'
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className={`w-full py-1.5 px-2 rounded-md flex items-center justify-between transition-all border ${
+            showAdvanced 
+            ? 'bg-red-600/10 border-red-500/30 text-red-500' 
+            : 'bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:text-zinc-300'
           }`}
         >
-            {house.fixedStake ? <Lock size={16} /> : <Unlock size={16} />}
-            {house.fixedStake ? 'STAKE FIXADA' : 'FIXAR STAKE'}
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal size={10} />
+            <span className="text-[8px] font-black uppercase tracking-[0.1em]">Ajustes Táticos</span>
+          </div>
+          {showAdvanced ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+        </button>
+
+        {showAdvanced && (
+          <div className="animate-in slide-in-from-top-2 duration-300 bg-black/40 rounded-lg p-2 border border-zinc-800 space-y-2">
+            <div className="flex justify-between items-center text-[8px] font-black text-zinc-400 uppercase">
+              <span className="flex items-center gap-1.5"><Percent size={10} className="text-red-500"/> TAXA</span>
+              <CustomToggle id={`comm-${index}`} checked={house.commission !== null} onChange={(c) => handleCheckboxChange('commission', c, 5)} colorClass="bg-red-600" />
+            </div>
+            {house.commission !== null && (
+              <input type="text" inputMode="decimal" value={house.commission || ''} onChange={(e) => handleInputChange('commission', e.target.value.replace(',', '.'))} className="w-full px-2 py-1 bg-zinc-900 border border-zinc-800 rounded text-white text-[9px] font-mono text-center" placeholder="5%"/>
+            )}
+            
+            <div className="flex justify-between items-center text-[8px] font-black text-zinc-400 uppercase">
+              <span className="flex items-center gap-1.5"><TrendingUp size={10} className="text-red-500"/> BOOST</span>
+              <CustomToggle id={`inc-${index}`} checked={house.increase !== null} onChange={(c) => handleCheckboxChange('increase', c, 10)} colorClass="bg-red-600" />
+            </div>
+            {house.increase !== null && (
+              <input type="text" inputMode="decimal" value={house.increase || ''} onChange={(e) => handleInputChange('increase', e.target.value.replace(',', '.'))} className="w-full px-2 py-1 bg-zinc-900 border border-zinc-800 rounded text-white text-[9px] font-mono text-center" placeholder="10%"/>
+            )}
+            
+            <div className="flex justify-between items-center text-[8px] font-black text-zinc-400 uppercase">
+              <span className="flex items-center gap-1.5"><Gift size={10} className="text-red-500"/> FREEBET</span>
+              <CustomToggle id={`fb-${index}`} checked={house.freebet} onChange={(c) => handleInputChange('freebet', c)} colorClass="bg-red-600" />
+            </div>
+          </div>
+        )}
+
+        <button 
+          onClick={() => actions.setFixedStake(index)} 
+          className={`w-full py-2 rounded-lg font-black text-[8px] md:text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+            house.fixedStake ? 'bg-red-600 text-white shadow-lg' : 'bg-zinc-800 text-zinc-500 hover:bg-zinc-700'
+          }`}
+        >
+          {house.fixedStake ? <Lock size={10} /> : <Unlock size={10} />}
+          {house.fixedStake ? 'FIXADA' : 'FIXAR'}
         </button>
       </div>
     </div>

@@ -3,6 +3,43 @@
 @tailwind utilities;
 
 @layer base {
+  body {
+    @apply bg-black antialiased;
+  }
+
+  /* Grain Overlay (Ensinamento 3) */
+  .grain-overlay::before {
+    content: "";
+    @apply fixed inset-0 z-[99] pointer-events-none opacity-[0.03];
+    background-image: url("https://www.transparenttextures.com/patterns/asfalt-dark.png");
+  }
+}
+
+@layer utilities {
+  .text-fluid-lg {
+    font-size: clamp(2.5rem, 12vw, 4.5rem);
+  }
+  .text-fluid-md {
+    font-size: clamp(1.1rem, 4vw, 1.5rem);
+  }
+
+  /* Custom Scrollbar for the Dashboard Card */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(220, 38, 38, 0.2);
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(220, 38, 38, 0.5);
+  }
+}
+
+@layer base {
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
