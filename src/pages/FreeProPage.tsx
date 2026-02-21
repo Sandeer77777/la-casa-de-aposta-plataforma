@@ -4,7 +4,7 @@ import { MissionDossier } from '../components/MissionDossier';
 
 export default function FreeProPage() {
   return (
-    <div className="max-w-[1920px] mx-auto px-4 md:px-10 pt-28 md:pt-36 pb-24 relative z-10">
+    <div className="max-w-[1920px] mx-auto px-4 md:px-10 pt-12 md:pt-16 pb-24 relative z-10">
       <MissionDossier type="freepro" />
       
       {/* Hero Section Padronizada para UX Mobile */}

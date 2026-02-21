@@ -33,7 +33,7 @@ export default function DoubleGreenPage() {
   }, [lucroValue, odd2Value])
 
   return (
-    <div className="max-w-[1920px] mx-auto px-4 md:px-8 pt-28 md:pt-36 pb-20 relative z-10">
+    <div className="max-w-[1920px] mx-auto px-4 md:px-8 pt-12 md:pt-16 pb-20 relative z-10">
       
       {/* Hero Section */}
       <div className="flex flex-col items-center text-center mb-12 md:mb-16">

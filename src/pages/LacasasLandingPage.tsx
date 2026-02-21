@@ -177,16 +177,16 @@ const LacasasLandingPage = () => {
         </div>
 
         {/* LADO DO CONTEÚDO */}
-        <div className="flex-grow flex flex-col items-center justify-start px-6 lg:ml-[45%] min-h-[50vh] lg:min-h-[calc(100vh-80px)] z-10 bg-[#050505] pb-12 pt-12 md:pt-16">
+        <div className="flex-grow flex flex-col items-center justify-start px-6 lg:ml-[45%] min-h-[50vh] lg:min-h-[calc(100vh-80px)] z-10 bg-[#050505] pb-12 pt-4 md:pt-8">
           <div className="w-full max-w-xl flex flex-col items-center text-center">
-            <div className="mb-12 lg:mb-16 w-full">
+            <div className="mb-6 lg:mb-10 w-full">
               <h1 className="font-archivo text-[clamp(2.5rem,8vw,5.5rem)] leading-[0.85] tracking-tighter uppercase animate-[title-aura_5s_infinite_ease-in-out]">
                 <span className="text-white">LA CASAS</span><br />
                 <span className="text-[#FF0000] drop-shadow-[0_0_10px_rgba(255,0,0,0.3)]">DE</span> <span className="text-white">APOSTA</span>
               </h1>
             </div>
 
-            <div className="mb-14 lg:mb-24 w-full relative flex flex-col items-center">
+            <div className="mb-8 lg:mb-12 w-full relative flex flex-col items-center">
               <div className="relative">
                   <h2 className="text-[clamp(1.2rem,4vw,2.5rem)] font-black uppercase tracking-tight text-white flex gap-3 items-center">
                   O JOGO <span className="text-[#FF0000]">COMEÇOU</span>

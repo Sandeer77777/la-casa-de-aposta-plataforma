@@ -104,7 +104,7 @@ export default function Layout({ children }: LayoutProps) {
       </header>
 
       {/* Main Content - 7. Espaçamento de Luxo */}
-      <main className="relative z-10 py-8 md:py-16 flex-grow">
+      <main className="relative z-10 flex-grow">
         {children}
       </main>
 
