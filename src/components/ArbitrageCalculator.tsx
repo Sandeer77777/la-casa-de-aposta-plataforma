@@ -4,6 +4,13 @@ import { BettingHouseCard } from './BettingHouseCard';
 import { Settings, BarChart3, TrendingUp, Share2, RotateCcw } from 'lucide-react';
 import { formatCurrency, formatPercentage } from '../utils/calculations';
 
+const parseFlex = (value: any): number => {
+  if (typeof value === 'number') return value;
+  if (!value || typeof value !== 'string') return 0;
+  const n = parseFloat(value.replace(',', '.'));
+  return isNaN(n) ? 0 : n;
+};
+
 export default function ArbitrageCalculator() {
   const { houses, numberOfHouses, results, roundingValue, actions } = useArbitrageCalculator();
 
@@ -17,7 +24,7 @@ export default function ArbitrageCalculator() {
               <div className="relative">
                 <label className="block text-[8px] font-black text-red-500 uppercase tracking-widest mb-1 ml-1">Mercados</label>
                 <select value={numberOfHouses} onChange={(e) => actions.setNumberOfHouses(Number(e.target.value))} className="w-full px-3 py-2 bg-black border border-zinc-800 rounded-md text-white font-bold text-[10px] appearance-none transition-all">
-                  {[2, 3, 4, 5, 6, 7, 8].map(num => (<option key={num} value={num}>{num} Alvos</option>))}
+                  {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (<option key={num} value={num}>{num} Alvos</option>))}
                 </select>
               </div>
               <div className="relative">
@@ -56,15 +63,26 @@ export default function ArbitrageCalculator() {
                   <tr>
                     <th className="px-3 py-2 font-black text-red-500 uppercase">Cenário</th>
                     <th className="px-3 py-2 font-black text-red-500 uppercase">Odd</th>
+                    <th className="px-3 py-2 font-black text-red-500 uppercase">Taxa</th>
+                    <th className="px-3 py-2 font-black text-red-500 uppercase">Risco (Lay)</th>
                     <th className="px-3 py-2 font-black text-red-500 uppercase text-right">Lucro Real</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-900 bg-black/20 text-[10px]">
                   {houses.slice(0, numberOfHouses).map((house, index) => (
                     <tr key={house.id} className="hover:bg-red-500/[0.01]">
-                      <td className="px-3 py-2 font-bold text-white uppercase truncate max-w-[60px]">{house.name || `C${index + 1}`}</td>
+                      <td className="px-3 py-2 font-bold text-white uppercase truncate max-w-[80px]">
+                        {house.name || `C${index + 1}`}
+                        {house.lay && <span className="ml-1 text-[8px] text-red-500">(LAY)</span>}
+                      </td>
                       <td className="px-3 py-2 font-black text-zinc-400 font-mono">{house.finalOdd.toFixed(2)}</td>
-                      <td className={`px-3 py-2 font-black text-right ${results.profits[index] >= 0 ? 'text-green-500' : 'text-red-500'}`}>{formatCurrency(results.profits[index] || 0)}</td>
+                      <td className="px-3 py-2 font-bold text-zinc-500">{house.commission ? `${house.commission}%` : '—'}</td>
+                      <td className="px-3 py-2 font-bold text-zinc-500">
+                        {house.lay ? formatCurrency(parseFlex(house.responsibility)) : '—'}
+                      </td>
+                      <td className={`px-3 py-2 font-black text-right ${results.profits[index] >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {formatCurrency(results.profits[index] || 0)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -13,7 +13,7 @@ const parseFlex = (value: any): number => {
 
 const formatDecimal = (n: number): string => n ? String(parseFloat(n.toFixed(2))) : '';
 
-const MAX_HOUSES = 6;
+const MAX_HOUSES = 12;
 
 const createInitialHouses = (): House[] => Array.from({ length: MAX_HOUSES }).map((_, i) => ({
   id: (i + 1).toString(), name: '', market: '', link: '', odd: '', stake: i === 0 ? '100' : '',
@@ -132,16 +132,50 @@ export function useArbitrageCalculator() {
     // 2.4 Calcular Resultados
     const active = nextHouses.slice(0, numberOfHouses);
     let totalInv = 0;
-    active.forEach(h => { if (!h.freebet) totalInv += h.lay ? parseFlex(h.responsibility) : parseFlex(h.stake); });
+    active.forEach(h => { 
+      if (!h.freebet) {
+        totalInv += h.lay ? parseFlex(h.responsibility) : parseFlex(h.stake); 
+      }
+    });
 
-    const profits = active.map(h => {
-      const s = parseFlex(h.stake);
-      const comm = (h.commission || 0) / 100;
-      let net = 0;
-      if (h.lay) net = s * (1 - comm);
-      else if (h.freebet) net = s * h.finalOdd * (1 - comm);
-      else net = (s * h.finalOdd) - ((s * (h.finalOdd - 1)) * comm);
-      return net - totalInv;
+    const profits = active.map((h, currentIdx) => {
+      let totalReturn = 0;
+      const fixedIdx = active.findIndex(item => item.fixedStake);
+      // Se não houver fixada, assumimos o Alvo 1 como base do confronto
+      const mainTargetIdx = fixedIdx !== -1 ? fixedIdx : 0;
+
+      active.forEach((innerHouse, innerIdx) => {
+        const s = parseFlex(innerHouse.stake);
+        const r = parseFlex(innerHouse.responsibility);
+        const o = parseFlex(innerHouse.finalOdd);
+        const comm = (innerHouse.commission || 0) / 100;
+
+        if (innerHouse.lay) {
+          // Lógica de LAY: Apostando CONTRA o alvo principal (mainTargetIdx)
+          if (currentIdx === mainTargetIdx) {
+            // O alvo principal venceu, o LAY perde a responsabilidade
+            totalReturn += 0;
+          } else {
+            // O alvo principal perdeu, o LAY ganha a stake (lucro) + devolve a responsabilidade
+            totalReturn += (s * (1 - comm)) + r;
+          }
+        } else {
+          // Lógica de BACK: Apostando A FAVOR do próprio alvo (innerIdx)
+          if (innerIdx === currentIdx) {
+            // Este alvo venceu
+            if (innerHouse.freebet) {
+              totalReturn += s * o * (1 - comm);
+            } else {
+              totalReturn += (s * o) - ((s * (o - 1)) * comm);
+            }
+          } else {
+            // Este alvo perdeu
+            totalReturn += 0;
+          }
+        }
+      });
+
+      return totalReturn - totalInv;
     });
 
     const minP = profits.length ? Math.min(...profits) : 0;

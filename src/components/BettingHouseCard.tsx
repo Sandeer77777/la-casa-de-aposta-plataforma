@@ -77,15 +77,38 @@ export const BettingHouseCard: React.FC<BettingHouseCardProps> = ({ house, index
           </div>
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <label className="text-[8px] font-black text-zinc-500 uppercase">STAKE (R$)</label>
+            <label className="text-[8px] font-black text-zinc-500 uppercase">{house.lay ? 'APOSTA' : 'STAKE'} (R$)</label>
             <div className="flex items-center gap-1">
               <span className="text-[7px] font-bold text-zinc-600 uppercase">LAY</span>
               <CustomToggle id={`lay-${index}`} checked={house.lay} onChange={(checked) => handleInputChange('lay', checked)} colorClass="bg-red-600" />
             </div>
           </div>
-          <input type="text" inputMode="decimal" value={house.stake} onChange={(e) => actions.handleStakeChange(index, e.target.value.replace(',', '.'))} className={`${inputBaseClasses} font-bold ${house.fixedStake ? 'border-red-500 text-red-500 shadow-[0_0_10px_rgba(220,38,38,0.1)]' : ''}`} placeholder="0.00" />
+          <div className="space-y-2">
+            <input 
+              type="text" 
+              inputMode="decimal" 
+              value={house.stake} 
+              onChange={(e) => actions.handleStakeChange(index, e.target.value.replace(',', '.'))} 
+              className={`${inputBaseClasses} font-bold ${house.fixedStake ? 'border-red-500 text-red-500 shadow-[0_0_10px_rgba(220,38,38,0.1)]' : ''}`} 
+              placeholder="0.00" 
+            />
+            
+            {house.lay && (
+              <div className="animate-in slide-in-from-top-1 duration-200">
+                <label className="block text-[8px] font-black text-red-500 uppercase mb-1">Responsabilidade (Risco)</label>
+                <input 
+                  type="text" 
+                  inputMode="decimal" 
+                  value={house.responsibility} 
+                  onChange={(e) => actions.handleResponsibilityChange(index, e.target.value.replace(',', '.'))} 
+                  className={`${inputBaseClasses} border-red-500/30 text-red-500 bg-red-500/5`} 
+                  placeholder="0.00" 
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

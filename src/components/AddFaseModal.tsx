@@ -1,18 +1,17 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { X, Calculator, Trash2, Zap, TrendingUp, Percent, ArrowRightLeft, Gift, PlusCircle, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Calculator, Trash2, Zap, TrendingUp, Percent, ArrowRightLeft, Shield, Rocket, PlusCircle, Check, Gift } from 'lucide-react';
 import { nanoid } from 'nanoid';
 
 // --- TYPE DEFINITIONS ---
 interface EntradaState {
   id: string;
   casa: string;
-  mercado: string;
+  mercado: string; 
   stake: string;
   odd: string;
   retorno: string;
   lucro: string;
-  isPromo: boolean; // Usado para Rainbow/Reembolso
-  isFreebet: boolean; // NOVO: Usado para FreeBet SnR
+  isPromo: boolean;
   valorReembolso: string;
   taxaExtracao: string;
   comissao: string;
@@ -28,12 +27,13 @@ interface EntradaState {
 interface AddFaseModalProps {
   isOpen?: boolean;
   onClose: () => void;
-  onSave: (entradas: any[]) => void;
+  onSave: (entradas: any[], resumo: { lucro: number; investido: number; retorno: number }) => void;
   faseIndex?: number;
   estrategiaOperacao: string;
   faseParaEditar?: any;
 }
 
+// --- HELPER ---
 const clean = (val: any) => {
     if (!val) return 0;
     const str = String(val).replace(',', '.');
@@ -49,110 +49,198 @@ const CardEntrada = ({ entrada, index, onUpdate, onRemove, estrategiaOperacao }:
     onRemove: (idx: number) => void;
     estrategiaOperacao: string;
 }) => {
-    // Classes visuais
-    const isFreebet = entrada.isFreebet;
-    const isRainbow = estrategiaOperacao === 'rainbow' && entrada.isPromo;
+    const inputClass = "w-full bg-[#0f172a] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-cyan-500 outline-none placeholder-slate-600 transition-all";
+    const labelClass = "text-xs font-bold text-slate-400 uppercase mb-1.5 block tracking-wide";
+    const isModeFreebet = estrategiaOperacao === 'freebet' || estrategiaOperacao === 'extracao';
     
-    // Borda dinâmica: Vermelho para FreeBet e Rainbow
-    let borderClass = 'border-zinc-800';
-    if (isFreebet || isRainbow) borderClass = 'border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.15)]';
-
-    const stakeLabel = isFreebet ? 'Valor Bônus' : 'Investimento';
-    const stakeColor = isFreebet ? 'text-red-500' : 'text-zinc-500';
-    const stakeInputClass = isFreebet 
-        ? 'border-red-500/50 text-red-100 focus:ring-red-500' 
-        : 'border-zinc-700 text-white focus:ring-red-500';
-
     return (
-      <div className={`p-6 space-y-6 bg-[#0E0E10] rounded-3xl border ${borderClass} relative group shadow-2xl transition-all duration-300`}>
+      <div className={`p-4 space-y-4 bg-slate-900 rounded-xl border ${entrada.isPromo ? 'border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'border-slate-800'} relative group shadow-lg transition-all`}>
         
         {index > 0 && (
-            <button type="button" onClick={() => onRemove(index)} className="absolute top-0 right-0 h-10 w-10 flex items-center justify-center rounded-bl-2xl rounded-tr-3xl bg-zinc-900 border-l border-b border-zinc-800 text-zinc-600 hover:bg-red-500/10 hover:text-red-500 transition-all z-10"><Trash2 size={18} /></button>
+            <button 
+                type="button" 
+                onClick={() => onRemove(index)} 
+                className="absolute top-0 right-0 h-8 w-8 flex items-center justify-center rounded-bl-xl rounded-tr-xl bg-slate-800 border-l border-b border-slate-700 text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition-all z-10"
+                title="Excluir Casa"
+            >
+                <Trash2 size={16} />
+            </button>
         )}
         
+        {/* Linha 1: Casa e Mercado */}
         <div className="grid grid-cols-2 gap-4">
             <div>
-                <label className="text-[10px] font-black text-zinc-500 uppercase mb-2 block tracking-widest">Plataforma</label>
-                <select value={entrada.casa} onChange={e => onUpdate(index, 'casa', e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:ring-1 focus:ring-red-500 outline-none transition-all appearance-none font-bold">
+                <label className={labelClass}>Casa</label>
+                <select 
+                    value={entrada.casa} 
+                    onChange={e => onUpdate(index, 'casa', e.target.value)} 
+                    className={inputClass}
+                >
                     <option value="">Selecione...</option>
                     <option value="BET365">BET365</option>
                     <option value="BETANO">BETANO</option>
                     <option value="BETBRA">BETBRA</option>
                     <option value="PINNACLE">PINNACLE</option>
                     <option value="FAIRCHANGE">FAIRCHANGE</option>
+                    <option value="BETFAIR">BETFAIR</option>
+                    <option value="JOGO DE OURO">JOGO DE OURO</option>
+                    <option value="SUPERBET">SUPERBET</option>
+                    <option value="KTO">KTO</option>
+                    <option value="ESTRELABET">ESTRELABET</option>
                 </select>
             </div>
             <div>
-                <label className="text-[10px] font-black text-zinc-500 uppercase mb-2 block tracking-widest">Mercado de Atuação</label>
-                <input type="text" value={entrada.mercado} onChange={e => onUpdate(index, 'mercado', e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:ring-1 focus:ring-red-500 outline-none transition-all font-bold placeholder-zinc-800" placeholder="EX: OVER 2.5" />
+                <label className={labelClass}>Mercado</label>
+                <input 
+                    type="text" 
+                    value={entrada.mercado} 
+                    onChange={e => onUpdate(index, 'mercado', e.target.value)} 
+                    className={inputClass} 
+                    placeholder="Ex: Over 2.5" 
+                />
             </div>
         </div>
 
+        {/* Linha 2: Stake e Odd */}
         <div className="grid grid-cols-2 gap-4">
             <div>
-                <label className={`text-[10px] font-black uppercase mb-2 block tracking-widest ${stakeColor}`}>{stakeLabel}</label>
-                <input type="text" value={entrada.stake} onChange={e => onUpdate(index, 'stake', e.target.value)} className={`w-full bg-black border rounded-xl px-4 py-3 text-sm font-black font-mono focus:ring-1 outline-none transition-all ${stakeInputClass}`} placeholder="100.00" />
+                <label className={labelClass}>Stake {entrada.isPromo && isModeFreebet && "(Freebet)"}</label>
+                <input 
+                    type="text" 
+                    value={entrada.stake} 
+                    onChange={e => onUpdate(index, 'stake', e.target.value)} 
+                    className={`${inputClass} font-mono font-medium ${entrada.isPromo && isModeFreebet ? 'text-emerald-400 border-emerald-500/30' : ''}`} 
+                    placeholder="100.00" 
+                />
             </div>
             <div>
-                <label className="text-[10px] font-black text-zinc-500 uppercase mb-2 block tracking-widest">Odd da Unidade</label>
-                <input type="text" value={entrada.odd} onChange={e => onUpdate(index, 'odd', e.target.value)} className={`w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white font-black font-mono focus:ring-1 focus:ring-red-500 outline-none ${entrada.isLay ? 'border-red-500/50 text-red-500' : ''}`} placeholder="2.00" />
+                <label className={labelClass}>Odd</label>
+                <input 
+                    type="text" 
+                    value={entrada.odd} 
+                    onChange={e => onUpdate(index, 'odd', e.target.value)} 
+                    className={`${inputClass} font-mono font-medium ${entrada.isLay ? 'border-red-500/50 text-red-100 focus:ring-red-500' : ''}`} 
+                    placeholder="2.00" 
+                />
             </div>
         </div>
         
-        {/* TOOLBAR DE AÇÕES */}
-        <div className="flex items-center gap-2 pt-2 overflow-x-auto">
-            {/* BOTÃO FREEBET */}
-            {estrategiaOperacao === 'freebet' && (
+        {/* Toolbar de Ações */}
+        <div className="flex items-center gap-2 pt-1">
+            {/* Lógica do Botão Dourado Freebet */}
+            {isModeFreebet ? (
                 <button 
-                    onClick={() => onUpdate(index, 'isFreebet', !entrada.isFreebet)} 
-                    className={`flex-1 py-3 flex items-center justify-center border transition-all rounded-xl text-[10px] font-black uppercase tracking-widest min-w-[100px] ${entrada.isFreebet ? 'bg-red-600 text-white border-red-600 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:bg-zinc-800 hover:text-white'}`}
+                    type="button" 
+                    onClick={() => onUpdate(index, 'isPromo', !entrada.isPromo)}
+                    className={`flex-1 py-2 flex items-center justify-center border transition-all rounded-lg text-xs font-bold uppercase tracking-wider ${
+                        entrada.isPromo 
+                            ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.3)]' 
+                            : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-white'
+                    }`}
                 >
-                    <Gift size={14} className="mr-2" /> Unidade Bônus
+                    <Gift size={14} className="mr-1.5" /> FreeBet
+                </button>
+            ) : (
+                <button 
+                    type="button" 
+                    onClick={() => onUpdate(index, 'showBoost', !entrada.showBoost)}
+                    className={`flex-1 py-2 flex items-center justify-center border transition-all rounded-lg text-xs font-bold uppercase tracking-wider ${
+                        entrada.showBoost ? 'bg-purple-500/20 text-purple-300 border-purple-500/50' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-white'
+                    }`}
+                >
+                    <Rocket size={14} className="mr-1.5" /> Aumento
                 </button>
             )}
 
-            <button onClick={() => onUpdate(index, 'showBoost', !entrada.showBoost)} className={`flex-1 py-3 flex items-center justify-center border transition-all rounded-xl text-[10px] font-black uppercase tracking-widest min-w-[100px] ${entrada.showBoost ? 'bg-red-500/10 text-red-500 border-red-500/40' : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:bg-zinc-800 hover:text-white'}`}><TrendingUp size={14} className="mr-2" /> Potencializar</button>
-            <button onClick={() => onUpdate(index, 'showCommission', !entrada.showCommission)} className={`flex-1 py-3 flex items-center justify-center border transition-all rounded-xl text-[10px] font-black uppercase tracking-widest min-w-[100px] ${entrada.showCommission ? 'bg-red-500/10 text-red-500 border-red-500/40' : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:bg-zinc-800 hover:text-white'}`}><Percent size={14} className="mr-2" /> Taxa</button>
-            <button onClick={() => onUpdate(index, 'isLay', !entrada.isLay)} className={`flex-1 py-3 flex items-center justify-center border transition-all rounded-xl text-[10px] font-black uppercase tracking-widest min-w-[100px] ${entrada.isLay ? 'bg-red-600 text-white border-red-600' : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:bg-zinc-800 hover:text-white'}`}><ArrowRightLeft size={14} className="mr-2" /> Modo Proteção</button>
+            <button 
+                type="button" 
+                onClick={() => onUpdate(index, 'showCommission', !entrada.showCommission)}
+                className={`flex-1 py-2 flex items-center justify-center border transition-all rounded-lg text-xs font-bold uppercase tracking-wider ${entrada.showCommission ? 'bg-blue-500/20 text-blue-300 border-blue-500/50' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-white'}`}
+            >
+                <Percent size={14} className="mr-1.5" /> Comissão
+            </button>
+            <button 
+                type="button" 
+                onClick={() => onUpdate(index, 'isLay', !entrada.isLay)}
+                className={`flex-1 py-2 flex items-center justify-center border transition-all rounded-lg text-xs font-bold uppercase tracking-wider ${entrada.isLay ? 'bg-red-500/20 text-red-300 border-red-500/50' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-white'}`}
+            >
+                <ArrowRightLeft size={14} className="mr-1.5" /> Lay
+            </button>
         </div>
 
-        {/* INPUTS CONDICIONAIS */}
-        
-        {/* Rainbow (Reembolso) */}
+        {/* Seções Condicionais */}
         {(estrategiaOperacao === 'rainbow' && entrada.isPromo) && (
-            <div className="grid grid-cols-2 gap-4 p-4 bg-red-500/5 rounded-2xl border border-red-500/10 mt-4 animate-in fade-in zoom-in-95">
-                 <div><label className="text-[10px] text-red-500 font-black uppercase mb-2 flex items-center gap-2"><Zap size={12} /> Reembolso Estimado (R$)</label><input type="text" value={entrada.valorReembolso} onChange={e => onUpdate(index, 'valorReembolso', e.target.value)} className="w-full bg-black border border-red-500/20 rounded-lg px-3 py-2 text-xs text-white font-bold outline-none focus:border-red-500" placeholder="100.00" /></div>
-                 <div><label className="text-[10px] text-red-500 font-black uppercase mb-2">Taxa de Conversão (%)</label><input type="text" value={entrada.taxaExtracao} onChange={e => onUpdate(index, 'taxaExtracao', e.target.value)} className="w-full bg-black border border-red-500/20 rounded-lg px-3 py-2 text-xs text-white font-bold outline-none focus:border-red-500" placeholder="70" /></div>
+            <div className="grid grid-cols-2 gap-3 p-3 bg-yellow-500/5 rounded-lg border border-yellow-500/20 mt-3 animate-in fade-in slide-in-from-top-2">
+                 <div>
+                    <label className="text-[10px] text-yellow-500 font-bold uppercase mb-1 flex items-center gap-1">
+                        <Zap size={12} /> Reembolso (R$)
+                    </label>
+                    <input type="text" value={entrada.valorReembolso} onChange={e => onUpdate(index, 'valorReembolso', e.target.value)} className="w-full bg-slate-950 border border-yellow-500/30 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-yellow-500" placeholder="100.00" />
+                 </div>
+                 <div>
+                    <label className="text-[10px] text-yellow-500 font-bold uppercase mb-1">Taxa (%)</label>
+                    <input type="text" value={entrada.taxaExtracao} onChange={e => onUpdate(index, 'taxaExtracao', e.target.value)} className="w-full bg-slate-950 border border-yellow-500/30 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-yellow-500" placeholder="70" />
+                </div>
             </div>
         )}
 
-        {entrada.showCommission && (<div className="pt-4 border-t border-zinc-800/50 mt-4 animate-in fade-in"><label className="text-[10px] text-red-500 font-black uppercase mb-2 block">Taxa de Operação (%)</label><input type="text" value={entrada.comissao} onChange={e => onUpdate(index, 'comissao', e.target.value)} className="w-full bg-black border border-red-500/20 rounded-lg px-3 py-2 text-xs text-white font-bold outline-none focus:border-red-500" placeholder="6.5" /></div>)}
-        {entrada.showBoost && (<div className="grid grid-cols-2 gap-4 pt-4 border-t border-zinc-800/50 mt-4 animate-in fade-in"><div><label className="text-[10px] text-red-500 font-black uppercase mb-2 block">Aumento Aplicado (%)</label><input type="text" value={entrada.percentualBoost} onChange={e => onUpdate(index, 'percentualBoost', e.target.value)} className="w-full bg-black border border-red-500/20 rounded-lg px-3 py-2 text-xs text-white font-bold outline-none focus:border-red-500" placeholder="25" /></div><div><label className="text-[10px] text-zinc-600 font-black uppercase mb-2 block">Odd Final do Plano</label><div className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-red-500 font-black font-mono">{entrada.oddFinal || '-'}</div></div></div>)}
+        {entrada.showCommission && (
+            <div className="pt-3 border-t border-slate-800/50 mt-3 animate-in fade-in">
+                <label className="text-[10px] text-blue-400 font-bold uppercase mb-1">Comissão (%)</label>
+                <input type="text" value={entrada.comissao} onChange={e => onUpdate(index, 'comissao', e.target.value)} className="w-full bg-slate-950 border border-blue-500/30 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500" placeholder="6.5" />
+            </div>
+        )}
+
+        {entrada.showBoost && !isModeFreebet && (
+            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800/50 mt-3 animate-in fade-in">
+                <div>
+                    <label className="text-[10px] text-purple-400 font-bold uppercase mb-1">Aumento (%)</label>
+                    <input type="text" value={entrada.percentualBoost} onChange={e => onUpdate(index, 'percentualBoost', e.target.value)} className="w-full bg-slate-950 border border-purple-500/30 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-purple-500" placeholder="25" />
+                </div>
+                <div>
+                    <label className="text-[10px] text-slate-500 font-bold uppercase mb-1">Odd Final</label>
+                    <div className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-300 font-mono">
+                        {entrada.oddFinal || '-'}
+                    </div>
+                </div>
+            </div>
+        )}
       </div>
     );
 };
 
 // --- COMPONENTE PRINCIPAL ---
-export const AddFaseModal: React.FC<AddFaseModalProps> = ({ isOpen = true, onClose, onSave, faseIndex, estrategiaOperacao, faseParaEditar }) => {
+export const AddFaseModal: React.FC<AddFaseModalProps> = ({ 
+  isOpen = true, onClose, onSave, faseIndex, estrategiaOperacao, faseParaEditar 
+}) => {
   const [entradas, setEntradas] = useState<EntradaState[]>([
-    { id: nanoid(), casa: 'BET365', mercado: '', odd: '', stake: '', comissao: '', isPromo: true, isFreebet: false, isLay: false, showCommission: false, showBoost: false, percentualBoost: '', valorReembolso: '', taxaExtracao: '', oddFinal: '', lucro: '', retorno: '' },
-    { id: nanoid(), casa: 'BETANO', mercado: '', odd: '', stake: '', comissao: '', isPromo: false, isFreebet: false, isLay: false, showCommission: false, showBoost: false, percentualBoost: '', valorReembolso: '', taxaExtracao: '', oddFinal: '', lucro: '', retorno: '' },
+    { id: nanoid(), casa: 'BET365', mercado: '', odd: '', stake: '', comissao: '', isPromo: true, isLay: false, showCommission: false, showBoost: false, percentualBoost: '', valorReembolso: '', taxaExtracao: '', oddFinal: '', lucro: '', retorno: '' },
+    { id: nanoid(), casa: 'BETANO', mercado: '', odd: '', stake: '', comissao: '', isPromo: false, isLay: false, showCommission: false, showBoost: false, percentualBoost: '', valorReembolso: '', taxaExtracao: '', oddFinal: '', lucro: '', retorno: '' },
   ]);
 
   // --- 1. CARGA DE DADOS ---
   useEffect(() => {
-    if (faseParaEditar && faseParaEditar.entradas) {
-      setEntradas(faseParaEditar.entradas.map((e: any) => ({
-        id: nanoid(), ...e,
-        stake: String(e.stake || ''), odd: String(e.odd || ''), percentualBoost: String(e.percentualBoost || ''),
-        comissao: String(e.comissao || ''), valorReembolso: String(e.valorReembolso || ''), taxaExtracao: String(e.taxaExtracao || ''),
-        isLay: !!e.isLay, isPromo: !!e.isPromo, isFreebet: !!e.isFreebet, showBoost: !!e.showBoost, showCommission: !!e.showCommission
-      })));
+    if (faseParaEditar && (faseParaEditar.entradas || faseParaEditar.fases)) {
+      const listaEntradas = faseParaEditar.entradas || [];
+      if(listaEntradas.length > 0) {
+        const dados = listaEntradas.map((e: any) => ({
+            id: nanoid(),
+            ...e,
+            stake: e.stake ? String(e.stake) : '',
+            odd: e.odd ? String(e.odd) : '',
+            percentualBoost: e.percentualBoost ? String(e.percentualBoost) : '',
+            comissao: e.comissao ? String(e.comissao) : '',
+            valorReembolso: e.valorReembolso ? String(e.valorReembolso) : '',
+            taxaExtracao: e.taxaExtracao ? String(e.taxaExtracao) : '',
+            isLay: !!e.isLay, isPromo: !!e.isPromo,
+            showBoost: !!e.showBoost, showCommission: !!e.showCommission
+        }));
+        setEntradas(dados);
+      }
     } else if (!faseParaEditar) {
-       // Reset
        setEntradas([
-        { id: nanoid(), casa: 'BET365', mercado: '', odd: '', stake: '', comissao: '', isPromo: true, isFreebet: false, isLay: false, showCommission: false, showBoost: false, percentualBoost: '', valorReembolso: '', taxaExtracao: '', oddFinal: '', lucro: '', retorno: '' },
-        { id: nanoid(), casa: 'BETANO', mercado: '', odd: '', stake: '', comissao: '', isPromo: false, isFreebet: false, isLay: false, showCommission: false, showBoost: false, percentualBoost: '', valorReembolso: '', taxaExtracao: '', oddFinal: '', lucro: '', retorno: '' }
+        { id: nanoid(), casa: 'BET365', mercado: '', odd: '', stake: '', comissao: '', isPromo: true, isLay: false, showCommission: false, showBoost: false, percentualBoost: '', valorReembolso: '', taxaExtracao: '', oddFinal: '', lucro: '', retorno: '' },
+        { id: nanoid(), casa: 'BETANO', mercado: '', odd: '', stake: '', comissao: '', isPromo: false, isLay: false, showCommission: false, showBoost: false, percentualBoost: '', valorReembolso: '', taxaExtracao: '', oddFinal: '', lucro: '', retorno: '' }
        ]);
     }
   }, [faseParaEditar]);
@@ -162,7 +250,10 @@ export const AddFaseModal: React.FC<AddFaseModalProps> = ({ isOpen = true, onClo
     const mestre = entradas[0];
     if (!mestre || !mestre.stake || clean(mestre.stake) <= 0) return;
 
+    const isFreebetMode = estrategiaOperacao === 'freebet' || estrategiaOperacao === 'extracao';
     let houveMudanca = false;
+
+    // Passo 1: Calcular Odds Efetivas
     const entradasCalc = entradas.map(item => {
         const oddBase = clean(item.odd);
         const comissao = clean(item.comissao) / 100;
@@ -170,20 +261,24 @@ export const AddFaseModal: React.FC<AddFaseModalProps> = ({ isOpen = true, onClo
         let oddFinal = oddBase;
         let oddParaCalculo = oddBase;
 
-        if (boost > 0) oddFinal = oddBase + ((oddBase - 1) * boost);
-
-        if (item.isFreebet) {
-            oddParaCalculo = oddFinal - 1; 
-        } else if (item.isLay) {
+        if (item.isLay) {
              if (oddBase > 0) oddParaCalculo = oddBase - comissao; 
         } else {
-             oddParaCalculo = 1 + ((oddFinal - 1) * (1 - comissao));
+             if (boost > 0) oddFinal = oddBase + ((oddBase - 1) * boost);
+             
+             // Lógica Freebet (SNR)
+             if (isFreebetMode && item.isPromo) {
+                 oddParaCalculo = (oddFinal - 1) * (1 - comissao); 
+             } else {
+                 oddParaCalculo = 1 + ((oddFinal - 1) * (1 - comissao));
+             }
         }
         return { ...item, oddFinal, oddParaCalculo };
     });
 
     const mestreCalc = entradasCalc[0];
     
+    // Passo 2: Calcular Retorno Alvo e Distribuir Stakes
     if (mestreCalc.oddParaCalculo > 0) {
         let retornoAlvo = clean(mestreCalc.stake) * mestreCalc.oddParaCalculo;
         
@@ -213,185 +308,181 @@ export const AddFaseModal: React.FC<AddFaseModalProps> = ({ isOpen = true, onClo
             })));
         }
     }
-  }, [entradas.map(e => e.stake + e.odd + e.percentualBoost + e.comissao + e.isPromo + e.isFreebet).join(','), estrategiaOperacao]);
+  }, [entradas.map(e => e.stake).join(','), entradas.map(e => e.odd).join(','), entradas.map(e => e.percentualBoost).join(','), entradas.map(e => e.comissao).join(','), entradas.map(e => e.valorReembolso).join(','), entradas.map(e => e.taxaExtracao).join(','), estrategiaOperacao, entradas.map(e => e.isPromo).join(',')]);
 
   const handleUpdate = (index: number, field: keyof EntradaState, value: any) => {
     let temp = entradas.map((e, i) => i === index ? { ...e, [field]: value } : e);
-    
     if (field === 'isPromo' && value === true) temp = temp.map((e, i) => ({ ...e, isPromo: i === index }));
-    if (field === 'isFreebet' && value === true) {
-        temp = temp.map((e, i) => ({ ...e, isFreebet: i === index })); 
-        temp[index].isLay = false;
-        temp[index].isPromo = false; 
-    }
-    if (field === 'isLay' && value === true) temp[index].isFreebet = false;
-
     if (field === 'showCommission' && value === false) temp[index].comissao = '';
     if (field === 'showBoost' && value === false) temp[index].percentualBoost = '';
-    
+    if (field === 'isLay' && value === true) { temp[index].showBoost = false; temp[index].percentualBoost = ''; }
     setEntradas(temp);
   };
 
-  const handleAdd = () => setEntradas([...entradas, { id: nanoid(), casa: '', mercado: '', odd: '', stake: '', comissao: '', isPromo: false, isFreebet: false, isLay: false, showCommission: false, showBoost: false, percentualBoost: '', valorReembolso: '', taxaExtracao: '', oddFinal: '', lucro: '', retorno: '' }]);
+  const handleAdd = () => setEntradas([...entradas, { id: nanoid(), casa: '', mercado: '', odd: '', stake: '', comissao: '', isPromo: false, isLay: false, showCommission: false, showBoost: false, percentualBoost: '', valorReembolso: '', taxaExtracao: '', oddFinal: '', lucro: '', retorno: '' }]);
   const handleRemove = (index: number) => setEntradas(entradas.filter((_, i) => i !== index));
 
   if (!isOpen) return null;
 
-  // --- CÁLCULOS FINAIS VISUAIS ---
+  // --- 3. CÁLCULOS FINAIS VISUAIS PARA TABELA E SALVAMENTO ---
+  // Esta variável é a fonte da verdade. O que aparece aqui é o que deve ser salvo.
   const entradasRender = entradas.map(item => {
       const oddBase = clean(item.odd);
       let oddFinal = oddBase;
       let oddParaCalculo = oddBase;
       const comissao = clean(item.comissao) / 100;
       const boost = clean(item.percentualBoost) / 100;
-      let investimento = clean(item.stake); 
-
-      if (item.isFreebet) {
-          investimento = 0; 
-          if (boost > 0) oddFinal = oddBase + ((oddBase - 1) * boost);
-          oddParaCalculo = oddFinal - 1; 
-      } 
-      else if (item.isLay) { 
+      let investimento = clean(item.stake);
+      const isModeFreebet = estrategiaOperacao === 'freebet' || estrategiaOperacao === 'extracao';
+      
+      if (item.isLay) { 
           if (oddBase > 0) { 
               oddParaCalculo = oddBase - comissao; 
               investimento = clean(item.stake) * (oddBase - 1); 
-          } 
-      } 
-      else { 
-          if (boost > 0) oddFinal = oddBase + ((oddBase - 1) * boost); 
-          oddParaCalculo = 1 + ((oddFinal - 1) * (1 - comissao)); 
-      }
+            } 
+        } else { 
+            if (boost > 0) oddFinal = oddBase + ((oddBase - 1) * boost); 
+            
+            if (isModeFreebet && item.isPromo) {
+                oddParaCalculo = (oddFinal - 1) * (1 - comissao);
+            } else {
+                oddParaCalculo = 1 + ((oddFinal - 1) * (1 - comissao)); 
+            }
+        }
       
-      return { ...item, oddFinalDisplay: oddFinal > 0 ? oddFinal.toFixed(2) : '-', oddParaCalculo, investimento, cleanStake: clean(item.stake) };
+      return { ...item, oddFinalDisplay: oddFinal > 0 ? oddFinal.toFixed(2) : '-', oddParaCalculo, investimento, cleanStake: clean(item.stake), comissaoVal: comissao };
   });
   
-  const totalInv = entradasRender.reduce((acc, cur) => acc + cur.investimento, 0); 
-  const valorFreebetTotal = entradasRender.filter(e => e.isFreebet).reduce((acc, cur) => acc + cur.cleanStake, 0);
+  const totalInv = entradasRender.reduce((acc, cur) => acc + cur.investimento, 0);
   const primeiraPerna = entradasRender.find(e => e.cleanStake > 0 && e.oddParaCalculo > 0);
   const totalRetornoGlobal = primeiraPerna ? primeiraPerna.cleanStake * primeiraPerna.oddParaCalculo : 0;
+  // Lucro Global que aparece no rodapé
   const totalLucro = totalRetornoGlobal - totalInv;
-  
-  let roiPerc = 0;
-  let labelROI = "ROI";
-  
-  if (valorFreebetTotal > 0) {
-      roiPerc = (totalLucro / valorFreebetTotal) * 100; 
-      labelROI = "Extração";
-  } else if (totalInv > 0) {
-      roiPerc = (totalLucro / totalInv) * 100;
-  }
+
+  // --- 4. FUNÇÃO DE SALVAMENTO CORRIGIDA (O PULO DO GATO) ---
+  const handleSalvarComCalculos = () => {
+    // Em vez de salvar 'entradas' (que podem não ter o lucro calculado ainda no state),
+    // salvamos o resultado de 'entradasRender', que é EXATAMENTE o que o usuário vê na tela.
+    
+    const dadosParaSalvar = entradasRender.map(item => {
+        // Calcula o lucro individual deste cenário:
+        // Se essa aposta bater, eu ganho o Retorno Dela - O Investimento Total que fiz em todas
+        const lucroCenario = (item.cleanStake * item.oddParaCalculo) - totalInv;
+        
+        return {
+            ...item,
+            // Forçamos o valor calculado para dentro do objeto que vai pro banco
+            lucro: lucroCenario.toFixed(2),
+            retorno: (item.cleanStake * item.oddParaCalculo).toFixed(2),
+            stake: item.cleanStake.toString(), // Garante formato string limpo
+            investimento: item.investimento.toFixed(2) // Salva o custo real dessa perna
+        };
+    });
+
+    const resumo = {
+      lucro: totalLucro,
+      investido: totalInv,
+      retorno: totalRetornoGlobal,
+    };
+
+    // Envia os dados "mastigados" para o pai
+    onSave(dadosParaSalvar, resumo);
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
-      <div className="bg-[#020202] w-full max-w-6xl rounded-[40px] shadow-[0_0_100px_rgba(0,0,0,0.8)] border-2 border-zinc-900 flex flex-col max-h-[95vh] animate-in fade-in zoom-in-95 duration-300 relative overflow-hidden">
-        
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500/30 to-transparent" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-slate-950 w-full max-w-6xl rounded-2xl shadow-2xl border border-slate-800 flex flex-col max-h-[95vh] animate-in fade-in zoom-in-95 duration-200">
         
         {/* HEADER */}
-        <div className="flex items-center justify-between p-5 md:p-8 border-b border-zinc-900 bg-[#0A0A0A]/80 backdrop-blur-md sticky top-0 z-20">
-          <div className="flex items-center gap-3 md:gap-5">
-            <div className="p-3 md:p-4 bg-red-500/10 rounded-2xl border border-red-500/20"><Calculator className="w-6 h-6 md:w-8 md:h-8 text-red-500" /></div>
-            <div><h2 className="text-lg md:text-2xl font-black text-white tracking-tight uppercase">Protocolo de Execução</h2><p className="text-[8px] md:text-[10px] text-red-500 font-black uppercase tracking-[0.2em] mt-1">Estratégia do Professor: {estrategiaOperacao}</p></div>
+        <div className="flex items-center justify-between p-6 border-b border-slate-800 bg-slate-900/50">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-cyan-500/10 rounded-xl border border-cyan-500/20">
+                <Calculator className="w-6 h-6 text-cyan-400" />
+            </div>
+            <div>
+                <h2 className="text-xl font-bold text-white tracking-tight">Editar Entradas</h2>
+                <p className="text-sm text-slate-400 font-medium">Gerenciamento de {estrategiaOperacao.toUpperCase()}</p>
+            </div>
           </div>
-          <button onClick={onClose} className="p-2 md:p-3 bg-zinc-900 hover:bg-zinc-800 rounded-xl text-zinc-500 hover:text-white transition-all border border-zinc-800"><X className="w-5 h-5 md:w-6 md:h-6" /></button>
+          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"><X className="w-6 h-6" /></button>
         </div>
 
         {/* BODY */}
-        <div className="p-5 md:p-8 overflow-y-auto flex-1 custom-scrollbar bg-black/20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+        <div className="p-6 overflow-y-auto flex-1 custom-scrollbar bg-slate-950">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {entradas.map((entrada, index) => (
-                <CardEntrada key={entrada.id} entrada={entrada} index={index} onUpdate={handleUpdate} onRemove={handleRemove} estrategiaOperacao={estrategiaOperacao} />
+                <CardEntrada 
+                    key={entrada.id} 
+                    entrada={entrada} 
+                    index={index} 
+                    onUpdate={handleUpdate} 
+                    onRemove={handleRemove} 
+                    estrategiaOperacao={estrategiaOperacao}
+                />
             ))}
           </div>
           
-          <div className="mt-10 flex justify-center">
-            <button onClick={handleAdd} className="px-10 py-5 rounded-[24px] border-2 border-dashed border-zinc-800 text-zinc-500 hover:text-red-500 hover:border-red-500/50 hover:bg-red-500/5 transition-all flex items-center gap-3 font-black text-xs uppercase tracking-widest group w-full md:w-auto">
-                <PlusCircle className="w-5 h-5 group-hover:scale-125 transition-transform" /> Adicionar Unidade Estratégica
+          <div className="mt-6 flex justify-center">
+            <button onClick={handleAdd} className="px-6 py-3 rounded-xl border border-dashed border-slate-700 text-slate-400 hover:text-cyan-400 hover:border-cyan-500 hover:bg-cyan-500/5 transition-all flex items-center gap-2 font-semibold group w-full md:w-auto">
+                <PlusCircle className="w-5 h-5 group-hover:scale-110 transition-transform" /> Adicionar Nova Casa
             </button>
           </div>
 
           {/* TABELA DE RESULTADOS */}
-          <div className="mt-12 bg-[#0E0E10] p-8 rounded-[32px] border-2 border-zinc-900 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 blur-[50px] rounded-full" />
-            
-            <div className="flex items-center justify-between mb-8 relative z-10">
-              <h3 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-3"><span className="w-3 h-3 bg-red-500 rounded-full animate-pulse" /> Projeção de Resultados</h3>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-lg bg-black text-red-500 border border-red-500/20">{estrategiaOperacao} analysis</span>
+          <div className="mt-8 bg-slate-900/50 p-6 rounded-2xl border border-slate-800 shadow-xl">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2"><span className="text-cyan-500">●</span> Simulação de Resultados</h3>
+              <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700">{estrategiaOperacao}</span>
             </div>
             
-            <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 rounded-2xl border border-zinc-800 bg-black/40 relative z-10">
-                <table className="w-full text-left text-zinc-400 min-w-[600px] md:min-w-0">
-                    <thead className="bg-zinc-900/50 border-b border-zinc-800">
+            <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
+                <table className="w-full text-sm text-left text-slate-300">
+                    <thead className="text-xs font-bold text-slate-400 uppercase bg-slate-800 border-b border-slate-700">
                         <tr>
-                            <th className="px-8 py-6 text-[12px] font-black text-red-500 uppercase tracking-widest">Cenário / Unidade</th>
-                            <th className="px-8 py-6 text-[12px] font-black text-red-500 uppercase tracking-widest text-center">Odd Final</th>
-                            <th className="px-8 py-6 text-[12px] font-black text-red-500 uppercase tracking-widest text-right">Alocação</th>
-                            {entradas.some(e => e.isLay) && <th className="px-8 py-6 text-[12px] font-black text-red-500 uppercase tracking-widest text-right">Risco</th>}
-                            <th className="px-8 py-6 text-[12px] font-black text-red-500 uppercase tracking-widest text-right">Retorno Bruto</th>
-                            <th className="px-8 py-6 text-[12px] font-black text-red-500 uppercase tracking-widest text-right">Saldo Líquido</th>
+                            <th className="px-4 py-3">Casa</th>
+                            <th className="px-4 py-3 text-center">Odd Final</th>
+                            <th className="px-4 py-3 text-right">Stake</th>
+                            <th className="px-4 py-3 text-right">Retorno</th>
+                            <th className="px-4 py-3 text-right">Lucro</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-zinc-900">
+                    <tbody className="divide-y divide-slate-800">
                         {entradasRender.map((item, index) => {
-                            const lucroVal = totalLucro;
-                            const lucroClass = lucroVal >= 0 ? 'text-green-500' : 'text-red-500';
+                            // Cálculo simplificado de lucro por linha para display
+                            const lucroCenario = (item.cleanStake * item.oddParaCalculo) - totalInv;
+                            const lucroClass = lucroCenario >= 0 ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold';
                             
                             return (
-                                <tr key={index} className="hover:bg-red-500/[0.02] transition-colors">
-                                    <td className="px-8 py-6 font-black text-white uppercase tracking-tight text-base">
-                                        <div className="flex items-center gap-4">
-                                          {item.casa || `Unidade ${index + 1}`}
-                                          {item.isLay && <span className="text-[10px] px-2 py-1 rounded bg-red-500 text-white font-black tracking-widest">SEC</span>}
-                                          {item.isFreebet && <span className="text-[10px] px-2 py-1 rounded bg-red-500 text-white font-black tracking-widest">BONUS</span>}
-                                        </div>
+                                <tr key={index} className="hover:bg-slate-800/50 transition-colors">
+                                    <td className="px-4 py-3 font-medium text-white flex items-center gap-2">
+                                        {item.casa || `Casa ${index + 1}`}
+                                        {item.isPromo && (estrategiaOperacao === 'freebet' || estrategiaOperacao === 'extracao') && <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">FREEBET</span>}
+                                        {item.isLay && <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20 font-bold">LAY</span>}
                                     </td>
-                                    <td className="px-8 py-6 text-center text-zinc-500 font-black font-mono text-lg">{item.oddFinalDisplay}</td>
-                                    <td className="px-8 py-6 text-right font-black font-mono text-zinc-300 text-lg">R$ {item.cleanStake.toFixed(2)}</td>
-                                    {entradas.some(e => e.isLay) && <td className="px-8 py-6 text-right font-black font-mono text-sm text-red-500/80">R$ {(item.investimento || 0).toFixed(2)}</td>}
-                                    <td className="px-8 py-6 text-right font-black font-mono text-zinc-300 text-lg">R$ {item.oddParaCalculo > 0 ? (item.cleanStake * item.oddParaCalculo).toFixed(2) : '0.00'}</td>
-                                    <td className={`px-8 py-6 text-right font-black font-mono text-2xl ${lucroClass}`}>{totalLucro >= 0 ? '+' : ''}R$ {totalLucro.toFixed(2)}</td>
+                                    <td className="px-4 py-3 text-center text-slate-400 font-mono">{item.oddFinalDisplay}</td>
+                                    <td className="px-4 py-3 text-right font-mono text-slate-200">R$ {item.cleanStake.toFixed(2)}</td>
+                                    <td className="px-4 py-3 text-right font-mono text-slate-300">R$ {(item.cleanStake * item.oddParaCalculo).toFixed(2)}</td>
+                                    <td className={`px-4 py-3 text-right font-mono ${lucroClass}`}>{lucroCenario >= 0 ? '+' : ''}R$ {lucroCenario.toFixed(2)}</td>
                                 </tr>
                             );
                         })}
                     </tbody>
-                    <tfoot className="bg-zinc-900/30 border-t-2 border-zinc-800">
+                    <tfoot className="bg-slate-950/80 border-t-2 border-slate-700">
                         <tr>
-                            <td colSpan={2} className="px-6 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em]">Balanço do Plano</td>
-                            
-                            <td className="px-6 py-6 text-right">
-                                <div className="flex flex-col items-end">
-                                    <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">Aporte Total</span>
-                                    <span className={`text-xl font-black font-mono tracking-tighter ${valorFreebetTotal > 0 ? 'text-red-500' : 'text-white'}`}>
-                                        R$ {valorFreebetTotal > 0 ? valorFreebetTotal.toFixed(2) : totalInv.toFixed(2)}
-                                    </span>
-                                </div>
-                            </td>
-
-                            {entradas.some(e => e.isLay) && <td></td>}
-                            
-                            <td className="px-6 py-6 text-right"><div className="flex flex-col items-end"><span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">Previsão Bruta</span><span className="text-xl font-black font-mono text-white tracking-tighter">R$ {totalRetornoGlobal.toFixed(2)}</span></div></td>
-                            
-                            <td className="px-6 py-6 text-right">
-                                <div className="flex flex-col items-end">
-                                    <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">Lucro Consolidado</span>
-                                    <div className={`text-3xl font-black font-mono tracking-tighter ${totalLucro >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                        R$ {totalLucro.toFixed(2)}
-                                    </div>
-                                    <div className={`text-[10px] mt-2 px-3 py-1 rounded-full font-black uppercase tracking-widest ${totalLucro >= 0 ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
-                                        {labelROI}: {roiPerc.toFixed(2)}%
-                                    </div>
-                                </div>
-                            </td>
+                            <td colSpan={2} className="px-4 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Totais</td>
+                            <td className="px-4 py-4 text-right"><div className="flex flex-col items-end"><span className="text-[10px] text-slate-500 font-bold uppercase">Investido (Risco)</span><span className="text-lg font-bold text-slate-200">R$ {totalInv.toFixed(2)}</span></div></td>
+                            <td className="px-4 py-4 text-right"><div className="flex flex-col items-end"><span className="text-[10px] text-slate-500 font-bold uppercase">Retorno Médio</span><span className="text-lg font-bold text-blue-400">R$ {totalRetornoGlobal.toFixed(2)}</span></div></td>
+                            <td className="px-4 py-4 text-right"><div className="flex flex-col items-end"><span className="text-[10px] text-slate-500 font-bold uppercase">Resultado</span><div className={`text-xl font-black ${totalLucro >= 0 ? 'text-emerald-400' : 'text-red-500'}`}>R$ {totalLucro.toFixed(2)}</div></div></td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
           </div>
 
-          <div className="flex justify-end gap-4 mt-12 pt-8 border-t border-zinc-900 relative z-10">
-            <button onClick={onClose} className="px-8 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-white bg-zinc-900/50 hover:bg-zinc-800 rounded-2xl transition-all border border-zinc-800">Cancelar</button>
-            <button onClick={() => onSave(entradas)} className="px-10 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white bg-red-600 hover:bg-white hover:text-black rounded-2xl shadow-[0_10px_30px_rgba(220,38,38,0.2)] transition-all transform active:scale-95 flex items-center gap-3">
-                <Check size={18} /> Validar Plano
+          <div className="flex justify-end gap-4 mt-8 pt-6 border-t border-slate-800">
+            <button onClick={onClose} className="px-6 py-2.5 text-sm font-bold text-slate-400 hover:text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition-colors border border-slate-700">Cancelar</button>
+            <button onClick={handleSalvarComCalculos} className="px-8 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl shadow-lg shadow-emerald-900/20 transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
+                <Check size={18} /> Salvar Alterações
             </button>
           </div>
 
