@@ -133,55 +133,39 @@ export function useArbitrageCalculator() {
     const active = nextHouses.slice(0, numberOfHouses);
     let totalInv = 0;
     active.forEach(h => { 
-      if (!h.freebet) {
-        totalInv += h.lay ? parseFlex(h.responsibility) : parseFlex(h.stake); 
-      }
+      const s = parseFlex(h.stake);
+      const r = parseFlex(h.responsibility);
+      // O investimento real é a Stake no BACK ou a Responsabilidade no LAY
+      totalInv += h.lay ? r : s;
     });
 
-    const profits = active.map((h, currentIdx) => {
-      let totalReturn = 0;
-      const fixedIdx = active.findIndex(item => item.fixedStake);
-      // Se não houver fixada, assumimos o Alvo 1 como base do confronto
-      const mainTargetIdx = fixedIdx !== -1 ? fixedIdx : 0;
+    const profits = active.map((_, currentIdx) => {
+      let currentScenarioReturn = 0;
+      const targetHouse = active[currentIdx];
+      const s = parseFlex(targetHouse.stake);
+      const r = parseFlex(targetHouse.responsibility);
+      const o = parseFlex(targetHouse.odd);
+      const o_final = targetHouse.finalOdd;
+      const comm = (targetHouse.commission || 0) / 100;
 
-      active.forEach((innerHouse, innerIdx) => {
-        const s = parseFlex(innerHouse.stake);
-        const r = parseFlex(innerHouse.responsibility);
-        const o = parseFlex(innerHouse.finalOdd);
-        const comm = (innerHouse.commission || 0) / 100;
-
-        if (innerHouse.lay) {
-          // Lógica de LAY: Apostando CONTRA o alvo principal (mainTargetIdx)
-          if (currentIdx === mainTargetIdx) {
-            // O alvo principal venceu, o LAY perde a responsabilidade
-            totalReturn += 0;
-          } else {
-            // O alvo principal perdeu, o LAY ganha a stake (lucro) + devolve a responsabilidade
-            totalReturn += (s * (1 - comm)) + r;
-          }
+      // Cada cenário i representa o caso onde a Aposta da Casa i foi VENCEDORA
+      if (targetHouse.lay) {
+        // Se o LAY venceu (o evento NÃO aconteceu), recebemos a Stake + Recuperamos a Responsabilidade
+        currentScenarioReturn = (s * (1 - comm)) + r;
+      } else {
+        // Se o BACK venceu, recebemos o Retorno Bruto (Stake + Lucro Líquido)
+        if (targetHouse.freebet) {
+          currentScenarioReturn = s * o_final * (1 - comm);
         } else {
-          // Lógica de BACK: Apostando A FAVOR do próprio alvo (innerIdx)
-          if (innerIdx === currentIdx) {
-            // Este alvo venceu
-            if (innerHouse.freebet) {
-              totalReturn += s * o * (1 - comm);
-            } else {
-              totalReturn += (s * o) - ((s * (o - 1)) * comm);
-            }
-          } else {
-            // Este alvo perdeu
-            totalReturn += 0;
-          }
+          currentScenarioReturn = s + (s * (o - 1) * (1 - comm));
         }
-      });
+      }
 
-      return totalReturn - totalInv;
+      return currentScenarioReturn - totalInv;
     });
 
     const minP = profits.length ? Math.min(...profits) : 0;
-    const fb = active.find(h => h.freebet);
-    const den = fb ? parseFlex(fb.stake) : totalInv;
-    const roi = den > 0 ? (minP / den) * 100 : 0;
+    const roi = totalInv > 0 ? (minP / totalInv) * 100 : 0;
 
     // Atualiza resultados se mudou
     if (JSON.stringify(results.profits) !== JSON.stringify(profits) || results.totalStake !== totalInv) {
